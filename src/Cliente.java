@@ -1,8 +1,11 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.*;
+import java.util.List;
 
 public class Cliente {
+
+    private List<Titan> titanes_capturados;
+    private List<Titan> titanes_asesinados;
 
     private final String prefijo = "[CLIENTE] ";
     private final String comando = "> ";
@@ -16,10 +19,21 @@ public class Cliente {
     public static void main(String[] args) throws IOException {
         Cliente cliente = new Cliente();
         cliente.Inicio();
-        cliente.ConexionDistrito(); //solo para testeo
+        //cliente.ConexionDistrito(); //solo para testeo
     }
 
     private void Inicio() throws IOException {
+        String[] parametros = RecibirParametros();
+        EnviarMensajeServidorCentral(parametros);
+        Flujo();
+    }
+
+    private void Flujo(){
+
+
+    }
+
+    private String[] RecibirParametros() throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String[] mensajes = new String[3];
         String[] resultados = new String[3];
@@ -34,9 +48,30 @@ public class Cliente {
             texto_usuario = br.readLine();
             resultados[i] = texto_usuario;
         }
-        servidor_central_ip = resultados[0];
-        servidor_central_puerto = resultados[1];
-        distrito = resultados[2];
+        return resultados;
+    }
+
+    private void EnviarMensajeServidorCentral(String[] parametros) throws IOException {
+        //Preparar datos para datagrama
+        InetAddress ip_central = InetAddress.getByName(parametros[0]);
+        int puerto_central = Integer.parseInt(parametros[1]);
+        byte[] mensaje;
+        ByteArrayOutputStream stream_output = new ByteArrayOutputStream(1000);
+        DataOutput output = new DataOutputStream(stream_output);
+        output.writeUTF(parametros[2]);
+        mensaje = stream_output.toByteArray();
+        //creacion socket, datagrama
+        DatagramSocket socket = new DatagramSocket();
+        DatagramPacket paquete = new DatagramPacket(mensaje, mensaje.length, ip_central,puerto_central);
+        socket.send(paquete);
+        //espero respuesta
+        byte[] buffer = new byte[1000];
+        ByteArrayInputStream stream_input = new ByteArrayInputStream(buffer);
+        DatagramPacket mensaje_recibido = new DatagramPacket(buffer, buffer.length);
+        socket.receive(mensaje_recibido);
+        //tomamos los parametros del datagrama
+        DataInput input = new DataInputStream(stream_input);
+        String distrito = input.readUTF();
     }
 
     private void ConexionDistrito() throws IOException {
