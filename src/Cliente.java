@@ -14,6 +14,9 @@ public class Cliente {
     private String servidor_central_puerto;
     private String distrito;
 
+    // ip: 127.0.0.1
+    //puerto central = 6001
+
     public Cliente() { }
 
     public static void main(String[] args) throws IOException {
@@ -23,7 +26,7 @@ public class Cliente {
     }
 
     private void Inicio() throws IOException {
-        String[] parametros = RecibirParametros();
+        String[] parametros = RecibirParametrosTESTEO();
         EnviarMensajeServidorCentral(parametros);
         Flujo();
     }
@@ -31,6 +34,26 @@ public class Cliente {
     private void Flujo(){
 
 
+    }
+    //SOLO PARA TESTEO
+    private String[] RecibirParametrosTESTEO() throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String[] mensajes = new String[3];
+        String[] resultados = new String[3];
+        mensajes[0] = "Ingresar IP Servidor Central";
+        mensajes[1] ="Ingresar Puerto Servidor Central";
+        mensajes[2] = "Introducir Nombre de Distrito a Investigar, Ej: Trost, Shiganshina";
+        String texto_usuario;
+        int i;
+        resultados[0] = "127.0.0.1";
+        resultados[1] = "6001";
+        for ( i = 2; i< mensajes.length; i++){
+            System.out.println(prefijo+mensajes[i]);
+            System.out.print(comando);
+            texto_usuario = br.readLine();
+            resultados[i] = texto_usuario;
+        }
+        return resultados;
     }
 
     private String[] RecibirParametros() throws IOException {
@@ -72,6 +95,7 @@ public class Cliente {
         //tomamos los parametros del datagrama
         DataInput input = new DataInputStream(stream_input);
         String distrito = input.readUTF();
+        System.out.println(distrito);
     }
 
     private void ConexionDistrito() throws IOException {
