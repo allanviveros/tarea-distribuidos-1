@@ -6,7 +6,7 @@ import java.net.*;
 import java.util.List;
 
 public class ServidorCentral {
-    //private ListaServidorCliente lista_servidor_cliente = ListaServidorCliente();
+    private ListaServidorCliente lista_servidor_cliente = new ListaServidorCliente();
 
     //constantes
     private final int puerto = 6001;
@@ -19,7 +19,9 @@ public class ServidorCentral {
         servidor_central.Inicio();
     }
 
-    public ServidorCentral(){}
+    public ServidorCentral(){
+        lista_servidor_cliente.ValoresIniciales();
+    }
 
     private void Inicio() throws IOException {
         //preparo socket y datagrama para los clientes
@@ -29,6 +31,8 @@ public class ServidorCentral {
         DataInput input = new DataInputStream(stream_input);
         DatagramPacket paquete_recibido = new DatagramPacket(buffer_input, largo);
         while (true) {
+            //muestro los distritos y usuarios
+            lista_servidor_cliente.DesplegarInformacion();
             //infinitamente recibo datagramas
             socket.receive(paquete_recibido); //esto bloquea el while si no recibe un DG
             //obtengo parametros del paquete
@@ -58,7 +62,7 @@ public class ServidorCentral {
         ByteArrayOutputStream stream_output = new ByteArrayOutputStream(largo);
         DataOutput output = new DataOutputStream(stream_output);
         if (indice == 1) {
-            Aceptar(output);
+            Aceptar(output, distrito, ip);
         } else if (indice == 2) {
             Rechazar(output);
         } else {
@@ -70,11 +74,22 @@ public class ServidorCentral {
         return respuesta;
     }
 
-    private void Aceptar(DataOutput output) throws IOException {
+    private void Aceptar(DataOutput output, String distrito, InetAddress ip) throws IOException {
         //inscribirlo en la estructura de datos
+        String ips = ip.toString().substring(1);
+        String[] parametros_distrito; //los almaceno sin el "/"
+        parametros_distrito = lista_servidor_cliente.AñadirCliente(ips, distrito);
+        int i;
+        for (i = 0; i < parametros_distrito.length; i++){
+            output.writeUTF(parametros_distrito[i]);
+        }
     }
 
     private void Rechazar(DataOutput output) throws IOException {
         output.writeUTF(rechazado);
+    }
+
+    private void DesplegarInformacion(){
+
     }
 }
