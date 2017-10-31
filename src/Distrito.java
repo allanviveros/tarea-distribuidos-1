@@ -30,6 +30,13 @@ public class Distrito {
         multisocket = new MulticastSocket(puerto_multicast);
         multisocket.joinGroup(ip_multicast);
     }
+	
+	public void InstanciarTitan(int idTitan, String nombreTitan, String tipoTitan){
+		titanes.add(new Titan(idTitan, tipoTitan, nombre, nombreTitan));
+	}
 
-
+	public String GetNombre(){
+		return this.nombre;
+	}
+	
 }
