@@ -12,7 +12,9 @@ public class ServidorCentral {
     private final int puerto = 6001;
     private final int largo = 1000;
     private final String prefijo = "[ServidorCentral] ";
-    private final String rechazado = "No fue aceptado";
+    public static final String rechazado = "No fue aceptado";
+
+
 
     public static void main(String[] args) throws IOException {
         ServidorCentral servidor_central = new ServidorCentral();

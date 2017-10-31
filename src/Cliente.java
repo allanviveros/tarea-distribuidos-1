@@ -95,7 +95,17 @@ public class Cliente {
         //tomamos los parametros del datagrama
         DataInput input = new DataInputStream(stream_input);
         String distrito = input.readUTF();
-        System.out.println(distrito);
+
+        String rechazado = ServidorCentral.rechazado;
+        if (distrito.equals(rechazado)) {
+            System.out.println("Este Cliente fue rechazado");
+        } else {
+            String ip_multicast  = input.readUTF();
+            String puerto_multicast = input.readUTF();
+            String ip_unicast = input.readUTF();
+            String puerto_unicast = input.readUTF();
+            //System.out.println(ip_multicast+puerto_multicast+ip_unicast+puerto_unicast+mensaje);
+        } //USAR WHILE
     }
 
     private void ConexionDistrito() throws IOException {

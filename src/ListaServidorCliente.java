@@ -65,7 +65,7 @@ public class ListaServidorCliente {
             return error;
         }
         int i;
-        for (i = 0; i < distrito.length() ; i++){
+        for (i = 0; i < distritos.size() ; i++){
             String[] aux = distritos.get(i);
             if(aux[0].equals(distrito)){
                 //obtengo el distrito al cual el cliente quiere conectarse
