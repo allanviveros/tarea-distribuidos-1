@@ -14,4 +14,7 @@ public class Titan {
     public int GetId(){
         return id;
     }
+    public String GetNombre(){ return nombre; }
+    public String GetDistrito() {return distrito ;}
+    public String GetTipo() { return tipo; }
 }

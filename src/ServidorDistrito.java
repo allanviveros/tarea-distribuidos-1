@@ -21,11 +21,11 @@ public class ServidorDistrito {
         servidorDistrito.Inicio();
     }
 
-    private void Inicio(){
+    private void Inicio() throws IOException {
         RecibirParametros();
     }
 
-    private void String[] RecibirParametros() throws IOException {
+    private void  RecibirParametros() throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         mensajes[0] = "Ingresar IP Multicast";
         mensajes[1] = "Ingresar Puerto";
@@ -72,7 +72,7 @@ public class ServidorDistrito {
     
     }
 	
-	private void InstanciarTitanEnDistrito(){
+	private void InstanciarTitanEnDistrito() throws IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		String[] mensajesIT = new String[3];
         String[] respuestasIT = new String[3];
@@ -88,13 +88,13 @@ public class ServidorDistrito {
             respuestasIT[i] = texto_usuario;
         }
 
-		if(distritos.length() == 0){
+		if(distritos.size() == 0){
             System.out.println("Lista De Distritos Vacia");
         } else {
-        	int i;
+
         	for (i = 0; i < distritos.size() ; i++){
             	Distrito aux = distritos.get(i);
-            	if(respuestasIT[0] == aux.GetNombre()){
+            	if(respuestasIT[0].equals(aux.GetNombre())){
             	    distritos.get(i).InstanciarTitan(idUltimoTitan, respuestasIT[1], respuestasIT[2]);
 					idUltimoTitan ++;
             	}

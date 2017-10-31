@@ -1,18 +1,16 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Cliente {
 
-    private List<Titan> titanes_capturados;
-    private List<Titan> titanes_asesinados;
+    private ArrayList<Titan> titanes_capturados = new ArrayList<Titan>();
+    private ArrayList<Titan> titanes_asesinados = new ArrayList<Titan>();
 
     private final String prefijo = "[CLIENTE] ";
     private final String comando = "> ";
-
-    private String servidor_central_ip;
-    private String servidor_central_puerto;
-    private String distrito;
+    private final int largo = 1000;
 
     // ip: 127.0.0.1
     //puerto central = 6001
@@ -105,11 +103,28 @@ public class Cliente {
             String ip_unicast = input.readUTF();
             String puerto_unicast = input.readUTF();
             //System.out.println(ip_multicast+puerto_multicast+ip_unicast+puerto_unicast+mensaje);
+            //Multicast();
+            System.out.println(puerto_multicast);
+            ConexionDistrito(distrito, ip_multicast, puerto_multicast, ip_unicast, puerto_unicast, socket);
         } //USAR WHILE
     }
 
-    private void ConexionDistrito() throws IOException {
+    private void Multicast(){
+        //NO USAR
+    }
+
+    private void ConexionDistrito(String distrito, String ip_multicast, String puerto_multicast,
+                                  String ip_unicast, String puerto_unicast, DatagramSocket unicast_socket) throws IOException {
         /* si la conexion es un exito llamar a esta funcion*/
+
+
+        //---
+        InetAddress multicast_ip = InetAddress.getByName(ip_multicast);
+        MulticastSocket multicast_socket = new MulticastSocket(Integer.parseInt(puerto_multicast));
+        //deberia ir un thread?
+
+        //---
+
         int i;
         String texto_usuario;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -126,63 +141,187 @@ public class Cliente {
         }
         System.out.print(comando);
         texto_usuario = br.readLine();
-        AccionCliente(Integer.parseInt(texto_usuario));
+        AccionCliente(Integer.parseInt(texto_usuario), distrito, ip_multicast, puerto_multicast,
+                ip_unicast, puerto_unicast,unicast_socket);
     }
 
-    private void AccionCliente(int eleccion) throws IOException {
+    private void AccionCliente(int eleccion, String distrito, String ip_multicast, String puerto_multicast,
+                               String ip_unicast, String puerto_unicast, DatagramSocket unicast_socket) throws IOException {
         switch (eleccion){
             case 1:
-                ListarTitanes();
-                ConexionDistrito();
+                ListarTitanes(ip_unicast, puerto_unicast, unicast_socket);
+                //ConexionDistrito();
                 break;
             case 2:
                 CambiarDistrito();
-                ConexionDistrito();
+                //ConexionDistrito();
                 break;
             case 3:
-                CapturarTitan();
-                ConexionDistrito();
+                CapturarTitan(ip_unicast, puerto_unicast, unicast_socket);
+                //ConexionDistrito();
                 break;
             case 4:
-                AsesinarTitan();
-                ConexionDistrito();
+                AsesinarTitan(ip_unicast, puerto_unicast, unicast_socket);
+                //ConexionDistrito();
                 break;
             case 5:
                 ListarTitanesCapturados();
-                ConexionDistrito();
+                //ConexionDistrito();
                 break;
             case 6:
                 ListarTitanesAsesinados();
-                ConexionDistrito();
+                //ConexionDistrito();
                 break;
             default:
-                System.out.println("NO DEBERIA PASAR");
-                ConexionDistrito();
+                System.out.println("NO DEBERIA PASAR, POR FAVOR INTENTE EJECUTAR DE NUEVO");
+                //ConexionDistrito();
                 break;
         }
     }
 
-    private void ListarTitanes(){
+    private void ListarTitanesCapturados() {
+        ListarTitanes(titanes_capturados);
+    }
 
+    private void ListarTitanes(String ip_unicast, String puerto_unicast, DatagramSocket socket_unicast) throws IOException {
+        //uso el ip unicast, y el puerto unicast
+        ByteArrayOutputStream output_stream = new ByteArrayOutputStream(largo);
+        DataOutput output = new DataOutputStream(output_stream);
+        String opcion = "1";
+        //escribo la opcion
+        ///output.writeInt(1);
+        output.writeUTF(opcion);
+        byte[] mensaje = output_stream.toByteArray();
+        DatagramPacket enviar = new DatagramPacket(mensaje, mensaje.length,
+                InetAddress.getByName(ip_unicast), Integer.parseInt(puerto_unicast));
+        socket_unicast.send(enviar);
+        //se lo envio al ip unicasr
+
+        //me preparo para recibir un mensaje
+        byte[] buffer_salida = new byte[largo];
+        ByteArrayInputStream input_stream = new ByteArrayInputStream(buffer_salida);
+        DataInput input = new DataInputStream(input_stream);
+        DatagramPacket mensaje_entrante = new DatagramPacket(buffer_salida, largo);
+        socket_unicast.receive(mensaje_entrante);
+
+        //debo recibir como primer parametro el numero de titanes
+
+        int numero_titanes = input.readInt();
+        //Imprimir titanes
+        if(numero_titanes!= 0) {
+            System.out.println(prefijo+"Titanes actualmente en el Distrito:");
+            for (int i = 0; i < numero_titanes; i++) {
+                System.out.println("");
+                System.out.println("Id: "+ input.readInt());
+                System.out.println("Nombre: "+ input.readUTF());
+                System.out.println("Distrito: "+ input.readUTF());
+                System.out.println("Tipo: "+ input.readUTF());
+                System.out.println("");
+            }
+        } else {
+            System.out.println(prefijo+"No hay Titanes actualemente");
+        }
     }
 
     private void CambiarDistrito(){
 
     }
 
-    private void CapturarTitan(){
+    private void CapturarTitan(String ip_unicast, String puerto_unicast, DatagramSocket socket_unicast) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
+        ByteArrayOutputStream output_stream = new ByteArrayOutputStream(largo);
+        DataOutput output = new DataOutputStream(output_stream);
+
+        System.out.println(prefijo+"¿nombre del titan que desea capturar?");
+        String titan = br.readLine();
+
+        String opcion = "3";
+
+        output.writeUTF(opcion);
+        output.writeUTF(titan);
+
+        byte[] mensaje = output_stream.toByteArray();
+
+        DatagramPacket peticion = new DatagramPacket(mensaje, mensaje.length,
+                InetAddress.getByName(ip_unicast), Integer.parseInt(puerto_unicast));
+        socket_unicast.send(peticion);
+
+        //preparo la entrada de la respuesta
+        byte[] buffer = new byte[largo];
+        ByteArrayInputStream input_stream = new ByteArrayInputStream(buffer);
+        DataInput input = new DataInputStream(input_stream);
+        DatagramPacket data = new DatagramPacket(buffer, largo);
+
+        socket_unicast.receive(data);
+        //obtengo los parametros de la respuesta
+        //primero obtengo el id
+        int id = input.readInt();
+        String nombre = input.readUTF();
+        String distrito = input.readUTF();
+        String tipo = input.readUTF();
+        //el titan es capturado (COLOCAR EN UNA LISTA
+        Titan titan_capturado = new Titan(id,tipo, distrito, nombre);
+        titanes_capturados.add(titan_capturado);
     }
 
-    private void AsesinarTitan(){
+    private void AsesinarTitan(String ip_unicast, String puerto_unicast, DatagramSocket socket_unicast) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
+        ByteArrayOutputStream output_stream = new ByteArrayOutputStream(largo);
+        DataOutput output = new DataOutputStream(output_stream);
+
+        System.out.println(prefijo+"¿nombre del titan que desea matar?");
+        String opcion = "4";
+
+        String titan = br.readLine();
+
+        output.writeUTF(opcion);
+        output.writeUTF(titan);
+
+        byte[] mensaje = output_stream.toByteArray();
+
+        DatagramPacket peticion = new DatagramPacket(mensaje, mensaje.length,
+                InetAddress.getByName(ip_unicast), Integer.parseInt(puerto_unicast));
+        socket_unicast.send(peticion);
+
+        byte[] buffer = new byte[largo];
+        ByteArrayInputStream input_stream = new ByteArrayInputStream(buffer);
+        DataInput input = new DataInputStream(input_stream);
+        DatagramPacket mensaje_recibido = new DatagramPacket(buffer, largo);
+
+        socket_unicast.receive(mensaje_recibido);
+
+        int id = input.readInt();
+        String nombre = input.readUTF();
+        String distrito = input.readUTF();
+        String tipo = input.readUTF();
+        //TitanLocalAS(id, nombre, distrito, tipo);
+
+        Titan titan_asesinado = new Titan(id,tipo, distrito, nombre);
+        titanes_asesinados.add(titan_asesinado);
     }
 
-    private void ListarTitanesCapturados(){
-
+    private void ListarTitanes(ArrayList<Titan> lista_titanes){
+        int i;
+        if(lista_titanes.size() != 0) {
+            System.out.println(prefijo+"Titanes Capturados");
+            for (i= 0; i<lista_titanes.size(); i++) {
+                Titan titan = lista_titanes.get(i);
+                System.out.println("");
+                System.out.println("Titan "+Integer.toString(i));
+                System.out.println("Nombre: "+titan.GetNombre());
+                System.out.println("Id: "+titan.GetId());
+                System.out.println("Tipo: "+titan.GetTipo());
+                System.out.println("Distrito: "+titan.GetDistrito());
+                System.out.println("");
+            }
+        } else {
+            System.out.println(prefijo+"No hay titanes ");
+        }
     }
 
     private void ListarTitanesAsesinados(){
-
+        ListarTitanes(titanes_asesinados);
     }
 }
