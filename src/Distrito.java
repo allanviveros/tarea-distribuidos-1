@@ -16,7 +16,7 @@ public class Distrito {
     private ArrayList<Titan> titanes = new ArrayList<Titan>();
 
     public Distrito(String nombre, InetAddress ip_multicast, int puerto_multicast,
-                    InetAddress ip_unicast, int puerto_unicast) throws IOException {
+                    InetAddress ip_unicast, int puerto_unicast) throws IOException {	
         this.nombre = nombre;
         this.ip_multicast = ip_multicast;
         this.puerto_multicast = puerto_multicast;
@@ -39,4 +39,7 @@ public class Distrito {
 		return this.nombre;
 	}
 	
+	public ArrayList<Titan> GetListaTitanes(){
+		return this.titanes;
+	}
 }
