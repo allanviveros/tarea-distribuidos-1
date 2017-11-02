@@ -1,50 +1,61 @@
 
 import java.io.*;
 import java.net.*;
-public class MCServer {
-    public static void main(String[] args) throws IOException {
+import java.util.ArrayList;
 
-        System.out.println("Arrancando el servidor multicast...\n");
+public class MCServer implements Runnable {
+    int puerto_multicast;
+    InetAddress ip_multicast;
+    private MulticastSocket socket_multi;
+    private ArrayList<Titan> titanes;
+    public MCServer(InetAddress ip_multicast, int puerto_multicast, ArrayList<Titan> titanes) {
+        this.ip_multicast = ip_multicast;
+        this.puerto_multicast = puerto_multicast;
+        this.titanes = titanes;
+    }
 
-//Creamos el MulticastSocket sin especificar puerto.
-        MulticastSocket s = new MulticastSocket();
+    public void Inicio() throws IOException {
 
-// Creamos el grupo multicast:
-        InetAddress group = InetAddress.getByName("231.0.0.1");
-
-// Creamos un datagrama vacío en principio:
-        byte[] vacio = new byte[0];
-        DatagramPacket dgp = new DatagramPacket(vacio, 0, group,
-                10000);
-
-//Cogemos los datos a encapsular de la entrada 
-//estándar (el teclado)
-        BufferedReader br = new BufferedReader(new
-                InputStreamReader(System.in));
-        String linea = br.readLine();
-
-//El servidor enviará los datos que lea por teclado hasta que
-//se escriba "salir":
-        while (!linea.equals("salir")) {
-
-//Creamos el buffer a enviar
-            byte[] buffer = linea.getBytes();
-
-//Pasamos los datos al datagrama
-            dgp.setData(buffer);
-
-//Establecemos la longitud
-            dgp.setLength(buffer.length);
-
-//Y por último enviamos:
-            s.send(dgp);
-
-//Leemos de la entrada estandar para evitar bucles infinitos
-            linea = br.readLine();
+        //Creamos el MulticastSocket sin especificar puerto.
+        socket_multi = new MulticastSocket();
 
         }
 
-// Cerramos el socket.
-        s.close();
+
+    @Override
+    public void run() {
+        DatagramPacket mensaje_enviar;
+        while (true) {
+            try {
+                //se prepara el mensaje
+                ByteArrayOutputStream output_stream = new ByteArrayOutputStream();
+                DataOutput output = new DataOutputStream(output_stream);
+                int numero_titanes = titanes.size();
+                output.writeInt(numero_titanes);
+                int i;
+                if (titanes.size() != 0) {
+                    for (i = 0; i < titanes.size(); i++) {
+                        Titan titan = titanes.get(i);
+                        output.writeInt(titan.GetId());
+                        output.writeUTF(titan.GetNombre());
+                        output.writeUTF(titan.GetDistrito());
+                        output.writeUTF(titan.GetTipo());
+                    }
+                }
+                byte[] mensaje = output_stream.toByteArray();
+                mensaje_enviar = new DatagramPacket(mensaje, mensaje.length,
+                        ip_multicast, puerto_multicast);
+                socket_multi.send(mensaje_enviar);
+                Thread.sleep(100000);
+
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+
+            }
+        }
+
     }
 }

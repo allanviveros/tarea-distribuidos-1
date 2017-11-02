@@ -1,209 +1,187 @@
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.List;
 
-public class ServidorDistrito {
-    //necesito una lista de distritos
+
+public class ServidorDistrito extends BaseComunicacion {
     ArrayList<Distrito> distritos = new ArrayList<Distrito>();
-	ArrayList<Titan> titanesAsesinados = new ArrayList<Titan>();
-	ArrayList<Titan> titanesCapturados = new ArrayList<Titan>();
 
+    private BufferedReader input;
     private int idUltimoTitan = 0;
 	private final int largo = 1000;
-
     private final String prefijo = "[ServidorDistrito] ";
     private final String comando = "> ";
     public static final String rechazado = "No fue aceptado";
+	private DatagramSocket socket;
 
-	private String[] mensajes = new String[2];
-	private String[] resultados = new String[2];
+	private String puerto_central;
+	private String ip_central;
+	private String puerto_central_distrito;
     
-	public ServidorDistrito(){}
+	public ServidorDistrito() throws SocketException {
+        socket = new DatagramSocket();
+        input = new BufferedReader(new InputStreamReader(System.in));
+    }
 
     public static void main(String[] args) throws IOException {
         ServidorDistrito servidorDistrito = new ServidorDistrito();
-        servidorDistrito.Inicio();
+        servidorDistrito.RecibirParametros();
+        servidorDistrito.Ciclo();
     }
 
-    private void Inicio() throws IOException {
-        RecibirParametros();
-	
-	//preparo socket y datagrama para los clientes
-        DatagramSocket socket = new DatagramSocket(resultados[1]);
-        byte[] buffer_input = new byte[largo];
-        ByteArrayInputStream stream_input = new ByteArrayInputStream(buffer_input);
-        DataInput input = new DataInputStream(stream_input);
-        DatagramPacket paquete_recibido = new DatagramPacket(buffer_input, largo);
-        while (true) {
-            //envio actualizaciones sobre los titanes
-            
-            //infinitamente recibo datagramas
-            socket.receive(paquete_recibido); //esto bloquea el while si no recibe un DG
-            //obtengo parametros del paquete
-            String mensajeOpcion = input.readUTF();
-			String mensajeDistrito = input.readUTF();
-            InetAddress ip = paquete_recibido.getAddress();
-            int port = paquete_recibido.getPort();
-            //elijo la respuesta a partir del mensaje recibido
-            DatagramPacket respuesta = Eleccion(mensajeOpcion, mensajeDistrito, ip, port);
-            socket.send(respuesta);
-        }
-    }
-
-    private void  RecibirParametros() throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        mensajes[0] = "Ingresar IP Multicast";
-        mensajes[1] = "Ingresar Puerto";
+    private void RecibirParametros() throws IOException {
+        String[] mensajes = new String[3];
+        String[] resultados = new String[3];
+        mensajes[0] = "Ingresar IP Servidor Central";
+        mensajes[1] = "Ingresar Puerto Servidor Central (peticiones clientes)";
+        mensajes[2] = "Ingresar Puerto Servidor Central (actualizar distritos)";
         String texto_usuario;
         int i;
         for ( i = 0; i< mensajes.length; i++){
             System.out.println(prefijo+mensajes[i]);
             System.out.print(comando);
-            texto_usuario = br.readLine();
+            texto_usuario = input.readLine();
             resultados[i] = texto_usuario;
         }
+        ip_central = resultados[0];
+        puerto_central = resultados[1];
+        puerto_central_distrito = resultados[2];
     }
 
-	private DatagramPacket Eleccion(String opcion, String distrito, InetAddress ip, int port) throws IOException {
-        //elijo la accion a ejecutar en base al mensaje del cliente
-		DatagramPacket respuesta;
-        ByteArrayOutputStream stream_output = new ByteArrayOutputStream(largo);
-        DataOutput output = new DataOutputStream(stream_output);
-
-        if (opcion.equals('1')) {
-            ListarTitanes(output, distrito, ip);
-        } else if (opcion.equals('2')) {
-            CambiarDistrito(output, distrito, ip);
-        } else if (opcion.equals('3')){
-            CapturarTitan(output, distrito, ip);
-        } else if (opcion.equals('4')){
-			AsesinarTitan(output, distrito, ip);
-		} else if (opcion.equals('5')){
-			ListarTitanesCapturados(output, distrito, ip);
-		} else if (opcion.equals('6')){
-			ListarTitanesAsesinados(output, distrito, ip);
-		} else {
-			System.out.print("Accion incorrecta, se considera rechazado");
-            Rechazar(output);
-		}
-        byte[] mensaje = stream_output.toByteArray();
-        respuesta = new DatagramPacket(mensaje, mensaje.length, ip, port);
-        return respuesta;
-    }
-
-    private void CrearDistrito(){
-        //crear distrito y mandarselo al servidor central
-    }
-
-    private void ListarTitanes(DataOutput output, String distrito, InetAddress ip) throws IOException {
-		String ips = ip.toString().substring(1);
-        String[] parametros_distrito; 
-        parametros_distrito = lista_servidor_cliente.AñadirCliente(ips, distrito);
-        int i, j;
-        for (i = 0; i < distritos.length; i++){
-			Distrito aux = distritos.get(i);
-			if (aux.GetNombre.equals(distrito)){
-				for (j = 0, j < aux.GetListaTitanes().lenght; j++){
-					Titan aux2 = aux.GetListaTitanes().get(j);
-					output.writeUTF(aux2.GetId() + " " + aux2.GetNombre() + " " + aux2.GetDistrito() + " " + aux2.GetTipo() + ",");		
-				}
-			}
-        }
-    }
-	
-	private void CambiarDistrito(DataOutput output, String distrito, InetAddress ip) throws IOException {
-
-	}
-
-    private void CapturarTitan(DataOutput output, String distrito, InetAddress ip) throws IOException {
-    	String ips = ip.toString().substring(1);
-        String[] parametros_distrito; 
-        parametros_distrito = lista_servidor_cliente.AñadirCliente(ips, distrito);
-        int i, j;
-        for (i = 0; i < distritos.length; i++){
-			if (distritos.get(i).GetNombre().equals(distrito)) {
-				for (j = 0; j < distritos.get(i).GetListaTitanes().lenght; j++){
-					if (distritos.get(i).GetListaTitanes().get(j).GetID().equals(idTitan)){
-						titanesCapturados.add(distritos.get(i).GetListaTitanes().get(j));
-						distritos.get(i).GetListaTitanes().remove(j);
-						output.writeUTF("Titan " + idTitan + " Asesinado");
-					}
-				}
-			}
-            
-        }
-    }
-	
-	private void AsesinarTitan(DataOutput output, String idTitan, InetAddress ip) throws IOException {
-		String ips = ip.toString().substring(1);
-        String[] parametros_distrito; 
-        parametros_distrito = lista_servidor_cliente.AñadirCliente(ips, distrito);
-        int i, j;
-        for (i = 0; i < distritos.length; i++){
-			if (distritos.get(i).GetNombre().equals(distrito)) {
-				for (j = 0; j < distritos.get(i).GetListaTitanes().lenght; j++){
-					if (distritos.get(i).GetListaTitanes().get(j).GetID().equals(idTitan)){
-						titanesAsesinados.add(distritos.get(i).GetListaTitanes().get(j));
-						distritos.get(i).GetListaTitanes().remove(j);
-						output.writeUTF("Titan " + idTitan + " Asesinado");
-					}
-				}
-			}
-            
-        }
-	}
-
-	private void ListarTitanesCapturados(DataOutput output, String distrito, InetAddress ip) throws IOException {
-		String ips = ip.toString().substring(1);
-        String[] parametros_distrito; 
-        parametros_distrito = lista_servidor_cliente.AñadirCliente(ips, distrito);
-        int i;
-        for (i = 0; i < titanesCapturados.length; i++){
-			Titan aux = titanesCapturados.get(i);
-            output.writeUTF(aux.GetId() + " " + aux.GetNombre() + " " + aux.GetDistrito() + " " + aux.GetTipo() + ",");
-        }
-	}
-
-	private void ListarTitanesAsesinados(DataOutput output, String distrito, InetAddress ip) throws IOException {
-		String ips = ip.toString().substring(1);
-        String[] parametros_distrito; 
-        parametros_distrito = lista_servidor_cliente.AñadirCliente(ips, distrito);
-        int i;
-        for (i = 0; i < titanesAsesinados.length; i++){
-			Titan aux = titanesAsesinados.get(i);
-            output.writeUTF(aux.GetId() + " " + aux.GetNombre() + " " + aux.GetDistrito() + " " + aux.GetTipo() + ",");
-        }
-	}
-
-	private void InstanciarTitanEnDistrito() throws IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		String[] mensajesIT = new String[3];
-        String[] respuestasIT = new String[3];
-        mensajesIT[0] = "Ingresar Nombre Del Distrito";
-        mensajesIT[1] = "Ingresar Nombre Del Titan";
-		mensajesIT[2] = "Ingresar Tipo Del Titan";
-        String texto_usuario;
-        int i;
-        for ( i = 0; i< mensajes.length; i++){
-            System.out.println(prefijo+mensajes[i]);
+    private void Ciclo() throws IOException {
+        while (true){
+            System.out.println(prefijo+"Eliga una de las opciones:");
+            System.out.println(prefijo+"(1) Crear distrito:");
+            System.out.println(prefijo+"(2) Crear titan:");
             System.out.print(comando);
-            texto_usuario = br.readLine();
-            respuestasIT[i] = texto_usuario;
+            String eleccion = input.readLine();
+            switch (Integer.parseInt(eleccion)){
+                case 1:
+                    CrearDistrito();
+                    break;
+                case 2:
+                    CrearTitan();
+                    break;
+                default:
+                    System.out.println("Opcion incorrecta, intente de nuevo");
+                    System.out.println("");
+                    break;
+            }
         }
+    }
+/*
+    private void CrearDistritoTESTEO() throws IOException {
+        String[] datos = new String[5];
+	    datos[0] = "trost";
+        datos[1] = "224.1.1.1";
+        datos[2] = "32768";
+        datos[3] = "192.168.1.10";
+        datos[4] = "6002";
+	    InetAddress ip_multicast = InetAddress.getByName(datos[1]);
+	    int puerto_multicast = Integer.parseInt(datos[2]);
+        InetAddress ip_peticiones = InetAddress.getByName(datos[3]);
+        int puerto_peticiones = Integer.parseInt(datos[4]);
+        Distrito distrito = new Distrito("trost", ip_multicast, puerto_multicast,
+                ip_peticiones, puerto_peticiones);
+        System.out.println("AQUI INICIO LOS SOCKKETS Y EL THERDA");
+        distrito.IniciarSockets();
 
-		if(distritos.size() == 0){
-            System.out.println("Lista De Distritos Vacia");
+
+        distritos.add(distrito);
+        String puerto = Integer.toString(ServidorCentral.puerto_crear_distrito);
+        EnviarPaquete(datos, ServidorCentral.ip, puerto,socket);
+    }
+*/
+    private void CrearDistrito() throws IOException {
+
+
+        //String puerto = Integer.toString(ServidorCentral.puerto_crear_distrito);
+
+        //System.out.println(ServidorCentral.ip+" / "+puerto);
+
+        String[] datos = new String[5];
+        String[] mensajes = new String[5];
+        mensajes[0] = prefijo+"Inserte nombre servidor:";
+        mensajes[1] = prefijo+"Inserte ip multicast:";
+        mensajes[2] = prefijo+"Inserte puerto multicast: ";
+        mensajes[3] = prefijo+"Inserte ip peticiones: ";
+        mensajes[4] = prefijo+"Inserte puerto peticiones: ";;
+        int i;
+        for (i=0;i<datos.length; i++){
+            System.out.println(mensajes[i]);
+            System.out.print(comando);
+            datos[i] = input.readLine();
+        }
+        InetAddress ip_multicast = InetAddress.getByName(datos[1]);
+        int puerto_multicast = Integer.parseInt(datos[2]);
+        InetAddress ip_peticiones = InetAddress.getByName(datos[3]);
+        int puerto_peticiones = Integer.parseInt(datos[4]);
+        Distrito distrito = new Distrito(datos[0], ip_multicast, puerto_multicast,
+                ip_peticiones, puerto_peticiones);
+        distritos.add(distrito);
+        EnviarPaquete(datos, ip_central, puerto_central_distrito,socket);
+        distrito.IniciarSockets();
+    }
+
+    private void CrearTitan() throws IOException {
+        System.out.println(prefijo+"Inserte nombre del distrito:");
+        System.out.print(comando);
+        String nombre_distrito = input.readLine();
+        int resultado_busqueda = BuscarDistrito(nombre_distrito);
+        if(resultado_busqueda >= 0){
+            Distrito distrito = distritos.get(resultado_busqueda);
+            String prefijo_menu = Distrito.prefijo+distrito.GetNombre();
+            System.out.println(prefijo_menu+"] Inserte nombre del titan:");
+            System.out.print(comando);
+            String nombre_titan = input.readLine();
+            System.out.println(prefijo_menu+"] Inserte tipo del titan:");
+            System.out.println(prefijo+"(1) Normal:");
+            System.out.println(prefijo+"(2) Exentrico:");
+            System.out.println(prefijo+"(3) Cambiante:");
+            System.out.print(comando);
+            String tipo_titan = input.readLine();
+
+            switch (Integer.parseInt(tipo_titan)){
+                case 1:
+                    tipo_titan = "Normal";
+                    break;
+                case 2:
+                    tipo_titan = "Excentrico";
+                    break;
+                case 3:
+                    tipo_titan = "Cambiante";
+                    break;
+                default:
+                    System.out.println("Opcion incorrecta, de dejo como tipo: Normal");
+                    tipo_titan = "Normal";
+                    break;
+            }
+            distrito.InstanciarTitan(idUltimoTitan,nombre_titan, tipo_titan);
+            idUltimoTitan +=1;
         } else {
+            String respuesta = "";
+            if(resultado_busqueda == -1){
+                respuesta = "no hay distritos existentes";
+            }else if(resultado_busqueda == -2){
+                respuesta = "no existe un distrito con ese nombre";
+            }
+            System.out.println("No se pudo: "+respuesta);
+            System.out.println("");
+        }
+    }
 
-        	for (i = 0; i < distritos.size() ; i++){
-            	Distrito aux = distritos.get(i);
-            	if(respuestasIT[0].equals(aux.GetNombre())){
-            	    distritos.get(i).InstanciarTitan(idUltimoTitan, respuestasIT[1], respuestasIT[2]);
-					idUltimoTitan ++;
-            	}
-        	}
-        System.out.println("No Existe El Distrito");
-		}
-	}
+    private int BuscarDistrito(String nombre){
+        if(distritos.size() != 0){
+            int i;
+            for (i= 0; i < distritos.size(); i++){
+                Distrito distrito = distritos.get(i);
+                if (nombre.equals(distrito.GetNombre())){
+                    return i;
+                }
+            }
+            return -2; //no existe en la lista
+        } else {
+            return -1; //no hay elementos en la lista
+        }
+    }
 }

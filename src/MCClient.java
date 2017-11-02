@@ -7,56 +7,60 @@ import java.net.*;
 //en la instancia del servidor (lo escrito saldrá en todos 
 //estos clientes creados).
  
-public class MCClient {
+public class MCClient implements Runnable {
 
-    public static void main(String[] args) throws IOException {
+    int puerto_multicast;
+    InetAddress ip_multicast;
+    private MulticastSocket socket_multi;
 
-        //Creamos un socket multicast en el puerto 10000:
-        MulticastSocket s = new MulticastSocket(10000);
+    public  MCClient(InetAddress ip_multicast, int puerto_multicast){
+        this.ip_multicast = ip_multicast;
+        this.puerto_multicast = puerto_multicast;
+    }
 
-        //Configuramos el grupo (IP) a la que nos conectaremos:
-        InetAddress group = InetAddress.getByName("231.0.0.1");
+    public void Iniciar() throws IOException {
+        socket_multi = new MulticastSocket(puerto_multicast);
+        socket_multi.joinGroup(ip_multicast);
+    }
 
-        //Nos unimos al grupo:
-        s.joinGroup(group);
+    @Override
+    public void run() {
+        while (true) {
+            byte[] buffer = new byte[1000];
+            ByteArrayInputStream stream_input = new ByteArrayInputStream(buffer);
+            DatagramPacket mensaje_recibido = new DatagramPacket(buffer, buffer.length);
 
-        //Leemos los paquetes enviados por el servidor multicast:
-        String salida = new String();
-        while (!salida.equals("salir")) {
+            try {
+                socket_multi.receive(mensaje_recibido);
+                //tomamos los parametros del datagrama
+                DataInput input = new DataInputStream(stream_input);
 
-            // Los paquetes enviados son de 256 bytes de maximo
-            //(es adaptable)
-            byte[] buffer = new byte[256];
 
-            //Creamos el datagrama en el que recibiremos el paquete
-            //del socket:
-            DatagramPacket dgp = new DatagramPacket(buffer, buffer.length);
-
-            // Recibimos el paquete del socket:
-            s.receive(dgp);
-
-            // Adaptamos la información al tamaño de lo que se envió
-            //(por si se envió menos de 256):
-            byte[] buffer2 = new byte[dgp.getLength()];
-
-            // Copiamos los datos en el nuevo array de tamaño adecuado:
-            System.arraycopy(dgp.getData(),
-                    0,
-                    buffer2,
-                    0,
-                    dgp.getLength());
-
-            //Vemos los datos recibidos por pantalla:
-            salida = new String(buffer2);
-            System.out.println(salida);
-
+                //Primer input me dice cuantos titanes a listar
+                int numero_titanes = input.readInt();
+                if(numero_titanes != 0) {
+                    for (int i = 0; i < numero_titanes; i++) {
+                        System.out.println("");
+                        System.out.println("Id: " + input.readInt());
+                        System.out.println("Nombre: " + input.readUTF());
+                        System.out.println("Distrito: " + input.readUTF());
+                        System.out.println("Tipo: " + input.readUTF());
+                        System.out.println("");
+                    }
+                } else {
+                    System.out.println("No hay titanes");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-
+/*
         //Salimos del grupo multicast
-        s.leaveGroup(group);
+        socket_multi.leaveGroup(group);
 
         // Cerramos el socket:
-        s.close();
+        socket_multi.close();
+*/
 
     }
 }

@@ -17,4 +17,13 @@ public class Titan {
     public String GetNombre(){ return nombre; }
     public String GetDistrito() {return distrito ;}
     public String GetTipo() { return tipo; }
+
+    public String[] ObtenerInformacion(){
+        String[] datos = new String[4];
+        datos[0] = Integer.toString(id);
+        datos[1] = tipo;
+        datos[2] = distrito;
+        datos[3] = nombre;
+        return  datos;
+    }
 }
